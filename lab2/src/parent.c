@@ -125,43 +125,53 @@ static ssize_t Run(int pipes[3][2], pid_t children[2],
 }
 
 int main(void) {
-    int pipes[3][2] = {{-1, -1}, {-1, -1}, {-1, -1}};
-    pid_t children[2] = {-1, -1};
-    char *input = NULL;
-    char *output = NULL;
-    size_t capacity = 0;
-    ssize_t output_size = -1;
-    int result = EXIT_FAILURE;
     const char prompt[] = "Введите строку: ";
     const char prefix[] = "Результат: ";
 
     if (WriteAll(STDOUT_FILENO, prompt, sizeof(prompt) - 1) == -1) {
         perror("write prompt");
-    } else {
-        ssize_t input_size = getline(&input, &capacity, stdin);
+        return EXIT_FAILURE;
+    }
 
-        if (input_size >= 0) {
-            output_size = Run(pipes, children, input, (size_t) input_size, &output);
-        } else if (feof(stdin)) {
+    char *input = NULL;
+    size_t capacity = 0;
+    ssize_t input_size = getline(&input, &capacity, stdin);
+
+    if (input_size == -1) {
+        if (feof(stdin)) {
             fprintf(stderr, "Ввод отсутствует\n");
         } else {
             perror("getline input");
         }
+        free(input);
+        return EXIT_FAILURE;
     }
+
+    int pipes[3][2] = {{-1, -1}, {-1, -1}, {-1, -1}};
+    pid_t children[2] = {-1, -1};
+    char *output = NULL;
+
+    ssize_t output_size = Run(
+        pipes, children, input, (size_t) input_size, &output
+    );
+
+    free(input);
 
     int close_result = ClosePipes(pipes, -1, -1);
     int wait_result = WaitChildren(children);
 
-    if (output_size >= 0 && close_result == 0 && wait_result == 0) {
-        if (WriteAll(STDOUT_FILENO, prefix, sizeof(prefix) - 1) == -1 ||
-            WriteAll(STDOUT_FILENO, output, (size_t) output_size) == -1) {
-            perror("write result");
-        } else {
-            result = EXIT_SUCCESS;
-        }
+    if (output_size == -1 || close_result == -1 || wait_result == -1) {
+        free(output);
+        return EXIT_FAILURE;
     }
 
-    free(input);
+    if (WriteAll(STDOUT_FILENO, prefix, sizeof(prefix) - 1) == -1 ||
+        WriteAll(STDOUT_FILENO, output, (size_t) output_size) == -1) {
+        perror("write result");
+        free(output);
+        return EXIT_FAILURE;
+    }
+
     free(output);
-    return result;
+    return EXIT_SUCCESS;
 }

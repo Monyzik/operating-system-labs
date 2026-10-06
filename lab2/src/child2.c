@@ -7,7 +7,6 @@
 int main(void) {
     char *line = NULL;
     size_t capacity = 0;
-    int result = EXIT_FAILURE;
     ssize_t size = getline(&line, &capacity, stdin);
 
     if (size == -1) {
@@ -16,25 +15,27 @@ int main(void) {
         } else {
             perror("child2: getline");
         }
-    } else {
-        size_t length = 0;
+        free(line);
+        return EXIT_FAILURE;
+    }
+    size_t length = 0;
 
-        for (ssize_t i = 0; i < size; ++i) {
-            if (line[i] == ' ' && length > 0 && line[length - 1] == ' ') {
-                continue;
-            }
-            line[length++] = line[i];
+    for (ssize_t i = 0; i < size; ++i) {
+        if (line[i] == ' ' && length > 0 && line[length - 1] == ' ') {
+            continue;
         }
-
-        line[length] = '\0';
-
-        if (WriteAll(STDOUT_FILENO, line, length) == -1) {
-            perror("child2: write");
-        } else {
-            result = EXIT_SUCCESS;
-        }
+        line[length++] = line[i];
     }
 
+    line[length] = '\0';
+
+    if (WriteAll(STDOUT_FILENO, line, length) == -1) {
+        perror("child2: write");
+        free(line);
+        return EXIT_FAILURE;
+    }
+
+
     free(line);
-    return result;
+    return EXIT_SUCCESS;
 }
