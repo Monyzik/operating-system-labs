@@ -23,7 +23,7 @@ int main(void) {
         line[i] = toupper(line[i]);
     }
 
-    if (WriteAll(STDOUT_FILENO, line, (size_t) size) == -1) {
+    if (WriteAll(STDOUT_FILENO, line, size) == -1) {
         perror("child1: write");
         free(line);
         return EXIT_FAILURE;

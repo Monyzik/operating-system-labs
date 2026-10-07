@@ -35,7 +35,7 @@ static pid_t StartChild(const char *program, int pipes[3][2], int index) {
             _exit(EXIT_FAILURE);
         }
 
-        execl(program, program, (char *) NULL);
+        execl(program, program, NULL);
         perror(program);
         _exit(EXIT_FAILURE);
     }
@@ -125,11 +125,11 @@ static ssize_t Run(int pipes[3][2], pid_t children[2],
 }
 
 int main(void) {
-    const char prompt[] = "Введите строку: ";
+    const char string[] = "Введите строку: ";
     const char prefix[] = "Результат: ";
 
-    if (WriteAll(STDOUT_FILENO, prompt, sizeof(prompt) - 1) == -1) {
-        perror("write prompt");
+    if (WriteAll(STDOUT_FILENO, string, sizeof(string) - 1) == -1) {
+        perror("write string");
         return EXIT_FAILURE;
     }
 
@@ -166,7 +166,7 @@ int main(void) {
     }
 
     if (WriteAll(STDOUT_FILENO, prefix, sizeof(prefix) - 1) == -1 ||
-        WriteAll(STDOUT_FILENO, output, (size_t) output_size) == -1) {
+        WriteAll(STDOUT_FILENO, output, output_size) == -1) {
         perror("write result");
         free(output);
         return EXIT_FAILURE;
